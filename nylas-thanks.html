@@ -1,0 +1,60 @@
+<html>
+
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script>
+    // Post data when page is loaded
+    async function pageOnload() {
+      // Get data from query string
+      const queryParams = new URLSearchParams(document.location.search);
+
+      const userId = queryParams.get('userId');
+      const conversationId = queryParams.get('convId');
+      const botId = queryParams.get('botId');
+      const name = queryParams.get('name');
+      const start_time = queryParams.get('start_time');
+      const tz = queryParams.get('tz');
+
+      // use correct domain for your region
+      const domain = 'https://va.bc-intg.liveperson.net/thirdparty-services-0.1/webview';
+      // encode auth string
+      const encoder = new TextEncoder();
+      const authString = encoder.encode(`${conversationId} || ${botId}`);
+      const hashBuffer = await window.crypto.subtle.digest('SHA-256', authString);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const auth = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+      const res = await postData(domain, auth, {
+        botId,
+        conversationId,
+        userId,
+        message: "request successful",
+        contextVariables: [
+          { "name": "name", "value": name },
+          { "name": "start_time", "value": start_time },
+          { "name": "tz", "value": tz }
+        ],
+      });
+    }
+
+    // Post data to Web View API
+    async function postData(url = '', auth, data = {}) {
+      const response = await fetch(url, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          'Authorization': auth,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+      return await response.json();
+    };
+  </script>
+</head>
+
+<body onload="pageOnload();">
+  Thank you. You may now close this page.
+</body>
+
+</html>
